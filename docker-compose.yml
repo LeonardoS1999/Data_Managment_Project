@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: supersecretpassword
+      POSTGRES_DB: dev_db
+    ports:
+      - "5432:5432"
+    # Tuned for a 16GB RAM Virtual Machine:
+    command: 
+          - "postgres"
+          - "-c"
+          - "shared_buffers=4GB"             # 25% of total RAM (Optimal standard for dedicated DB)
+          - "-c"
+          - "effective_cache_size=12GB"      # 75% of total RAM (Informs query planner of OS page cache)
+          - "-c"
+          - "work_mem=64MB"                  # Safely set per-operation memory (prevents multi-GB spikes per query)
+          - "-c"
+          - "maintenance_work_mem=1GB"       # Speeds up bulk inserts, index creation, and VACUUM
+          - "-c"
+          - "min_wal_size=1GB"
+          - "-c"
+          - "max_wal_size=4GB"               # Reduces checkpoint frequency during large loads
+          - "-c"
+          - "checkpoint_completion_target=0.9" # Smooths out disk I/O writes
+          - "-c"
+          - "max_worker_processes=8"         # Match typical vCPU allocation
+          - "-c"
+          - "max_parallel_workers_per_gather=4" # Allows parallel query execution for heavy scans
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - db_net
+
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin_gui
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+      PGADMIN_CONFIG_WTF_CSRF_ENABLED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - db_net
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  db_net:
+    driver: bridge
