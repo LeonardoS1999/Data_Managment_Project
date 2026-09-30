@@ -859,7 +859,7 @@ def drop_denormalized_columns():
         ], errors='ignore')
         df.to_csv(ROUTES_PATH, sep=',', index=False)
     
-    print(f"            ✅ Actually dropping:  {existing_cols}")
+    print(f"            ✅ Actually dropping:  {cols_to_drop}")
         
     print(f"            ✅ Done in {time.time() - step_start:.4f} seconds\n")
 
